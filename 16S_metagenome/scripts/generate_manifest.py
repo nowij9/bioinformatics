@@ -6,7 +6,7 @@ import sys
 
 def manifest_make(filepath):
 
-    ### directory 내 모든 fq 파일 리스트에 추가 ###
+    ### generate fq list in path ###
     raws = [
         fi
         for fi in os.listdir(filepath)
@@ -16,22 +16,20 @@ def manifest_make(filepath):
         or fi.endswith("fq.gz")
     ]
 
-    ### alphabet 순으로 정렬 ###
+    ### sort by alphabetic order ###
     raws = sorted(raws)
     fwds = [raw for raw in raws if "R1" in raw]
     revs = [raw for raw in raws if "R2" in raw]
 
-    ### input path에 따라 절대경로 설정 ###
+    ### add absolute path by filepath ###
     abspath_fwd = [f"{filepath}/{fwd}" for fwd in fwds]
     abspath_rev = [f"{filepath}/{rev}" for rev in revs]
 
-    ### fq파일의 "_" 이전 부분을 샘플명으로 지정 ###
+    ### set samplename as ID before "_" ###
     samplenames = [fwd.split("_")[0] for fwd in fwds]
 
-    ### csv 파일로 내보내기 ###
-    # with open(f"{outpath}/manifest.txt", "w") as fo:
+    ### export as csv ###
     with open("manifest.txt", "w") as fo:
-
         tsv = csv.writer(fo, delimiter="\t")
         ### header ###
         colnames = [
@@ -41,12 +39,12 @@ def manifest_make(filepath):
         ]
         tsv.writerow(colnames)
 
-        ### 각 샘플 row ###
+        ### add row per sample ###
         for i in range(len(samplenames)):
             tsv.writerow([samplenames[i], abspath_fwd[i], abspath_rev[i]])
 
 
+# $ generate_manifest.py [abspath]
 if __name__ == "__main__":
-    filepath = sys.argv[1]  # cmd: $ X.py /abs/path
+    filepath = sys.argv[1]
     manifest_make(filepath)
-# manifest_make("/BiO/Access/home/user1/dnalink/quest/input/shotgun_test_group")

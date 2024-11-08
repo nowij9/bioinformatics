@@ -3,23 +3,24 @@ import pandas as pd
 import sys
 
 
+### for analysis report table ###
 def qiime_table_merge(OTUSeq, TAXAtable, OTUtable, OTU_summary):
 
     ###### OTUSeq parsing ######
-    ### | >#OTU ID | OTU Seq |
+    # | >#OTU ID | OTU Seq |
     with open(OTUSeq, "r") as fi:
         otu_sequences = fi.readlines()
 
-        # OTU ID와 Seq 리스트로 분리
+        ### separate each OTU by ID and sequence ###
         otuID = [header.strip() for header in otu_sequences if header.startswith(">")]
         otuSEQ = [seq.strip() for seq in otu_sequences if not seq.startswith(">")]
 
-        # OTU 번호 생성
+        ### generate OTU number ###
         otuNUM = [
             f"OTU_0{i}" if i < 10 else f"OTU_{i}" for i in range(1, len(otuID) + 1, 1)
         ]
 
-    # OTU Seq 테이블화
+    ### Tablemake ###
     otu_seq_df = pd.DataFrame(
         {
             "OTU ID": otuNUM,
@@ -29,21 +30,21 @@ def qiime_table_merge(OTUSeq, TAXAtable, OTUtable, OTU_summary):
     )
 
     ###### TAXAtable parsing ######
-    ### | Feature ID | Taxon | Confidence |
+    # | Feature ID | Taxon | Confidence |
     taxonomy = pd.read_csv(TAXAtable, sep="\t")
 
-    # 열 이름 변경 (Feature ID -> #OTU ID)
+    ### change colname (Feature ID -> #OTU ID) ###
     taxonomy.rename(columns={"Feature ID": "#OTU ID"}, inplace=True)
 
-    # Confidence 열 삭제
+    ### delete col ("Confidence") ###
     taxonomy = taxonomy.drop("Confidence", axis=1)
 
     ###### OTUtable parsing ######
-    ### | #OTU ID | SAMPLES[...] |
-    # 1행 skip하고 불러오기
+    # | #OTU ID | SAMPLES[...] |
+    ### import & skip 1st row ###
     otu_cnt_table = pd.read_csv(OTUtable, sep="\t", skiprows=1)
 
-    # #OTU ID 기준 정렬
+    ### sort by OTU ID ###
     merge_1 = pd.merge(otu_seq_df, taxonomy, on="#OTU ID", how="left")
     merge_2 = pd.merge(merge_1, otu_cnt_table, on="#OTU ID", how="left")
 
@@ -51,8 +52,7 @@ def qiime_table_merge(OTUSeq, TAXAtable, OTUtable, OTU_summary):
     merge_2.to_csv(OTU_summary, sep="\t", index=False)
 
 
+# $ filemerge_input.py [infile1] [infile2] [infile3] [outfile]
 if __name__ == "__main__":
-    OTUSeq, TAXAtable, OTUtable, OTU_summary = sys.argv[
-        1:5
-    ]  # cmd: $ X.py [infile1] [infile2] [infile3] [outfile]
+    OTUSeq, TAXAtable, OTUtable, OTU_summary = sys.argv[1:5]
     qiime_table_merge(OTUSeq, TAXAtable, OTUtable, OTU_summary)
